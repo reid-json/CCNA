@@ -90,7 +90,7 @@ test("corrupt saved data is not silently overwritten", () => {
 });
 
 class Element {
-  constructor(tag) { this.tag = tag; this.children = []; this.textContent = ""; }
+  constructor(tag) { this.tag = tag; this.children = []; this.textContent = ""; this.dataset = {}; }
   append(...children) { this.children.push(...children); }
   replaceChildren() { this.children = []; }
   addEventListener() {}
@@ -103,7 +103,7 @@ test("guided panel hides all lesson facts until an answer is committed", () => {
     document: { createElement: (tag) => new Element(tag), createTextNode: (text) => ({ text }) },
     modules: [{ id: "ip-connectivity", title: "IP Connectivity" }]
   });
-  vm.runInContext(fs.readFileSync(path.join(root, "quiz.js"), "utf8"), context);
+  for (const file of ["references.js", "guidance.js", "quiz.js"]) vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context);
   const q = {
     domain: "ip-connectivity", question: "What is the subnet for this /24 address?",
     lesson: { title: "Secret title", points: ["Secret fact"], code: "Secret command", tip: "Secret tip" }
@@ -111,7 +111,7 @@ test("guided panel hides all lesson facts until an answer is committed", () => {
   context.q = q;
   context.container = new Element("section");
   vm.runInContext("renderLesson(container, q, false)", context);
-  assert.match(context.container.text, /network boundaries/);
+  assert.match(context.container.text, /network|prefix/);
   assert.doesNotMatch(context.container.text, /Secret/);
   vm.runInContext("renderLesson(container, q, true)", context);
   for (const value of ["Secret title", "Secret fact", "Secret command", "Secret tip"]) {
@@ -121,13 +121,13 @@ test("guided panel hides all lesson facts until an answer is committed", () => {
 
 test("guidance does not depend on correct answers or explanations", () => {
   const context = vm.createContext({});
-  vm.runInContext(fs.readFileSync(path.join(root, "quiz.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(root, "guidance.js"), "utf8"), context);
   context.q = { domain: "network-access", question: "How does STP choose a root bridge?" };
-  const before = vm.runInContext("reasoningPrompts(q).join(' ')", context);
+  const before = vm.runInContext("JSON.stringify(questionGuidance(q))", context);
   context.q.answer = [3];
   context.q.options = ["Secret A", "Secret B", "Secret C", "Secret D"];
   context.q.explanation = "Spoiler";
-  assert.equal(vm.runInContext("reasoningPrompts(q).join(' ')", context), before);
+  assert.equal(vm.runInContext("JSON.stringify(questionGuidance(q))", context), before);
   assert.match(before, /tie-breaker/);
   assert.doesNotMatch(before, /Secret|Spoiler/);
 });
@@ -136,7 +136,7 @@ test("all 1000 study questions support guided and unlocked lessons", () => {
   const context = vm.createContext({
     document: { createElement: (tag) => new Element(tag), createTextNode: (text) => ({ text }) }
   });
-  const files = ["data.js", ...fs.readdirSync(root).filter((name) => /^study-.*\.js$/.test(name)), "bank.js", "quiz.js"];
+  const files = ["data.js", ...fs.readdirSync(root).filter((name) => /^study-.*\.js$/.test(name)), "bank.js", "references.js", "guidance.js", "quiz.js"];
   for (const file of files) vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
   const questions = vm.runInContext("studyBank", context);
   assert.equal(questions.length, 1000);
