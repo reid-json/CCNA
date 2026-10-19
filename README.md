@@ -13,8 +13,10 @@ Open `index.html` in a browser. No build step.
 
 ## Edit it
 
-- Study-page questions, explanations and quick lessons: `data.js`
-- Extra exam-only questions, drag-and-drop items and CLI labs: `exam-bank.js` (the full exam uses every question in both files; labs use the simulator in `qtypes.js`)
+- Two separate pools (no overlap), merged by `bank.js`:
+  - Study pool (~1000 questions with lessons): `data.js` (starter set) plus `study-*.js` (one `studyTopics.push({...})` per file)
+  - Exam pool (~450 questions): `exam-bank.js` (hand-built, incl. drag-and-drop and CLI labs) plus `exam-*.js` (`examPool.push({...})`); labs use the simulator in `qtypes.js`
+- Validate new content files with a quick check that each question has 4-5 options and a valid answer index.
 - Flashcards: `script.js`
 - Look and feel: `theme.css` (colors, dark mode), `pages.css` (study/exam pages), `styles.css` (home page)
 
